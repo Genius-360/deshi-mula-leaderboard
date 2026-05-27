@@ -1,0 +1,16 @@
+{
+  "name": "sentiment-leaderboard-scraper",
+  "version": "2.0.0",
+  "description": "Puppeteer-based scraper and Bayesian scoring engine for the Company Sentiment Leaderboard.",
+  "main": "scraper.js",
+  "type": "module",
+  "scripts": {
+    "scrape": "node scraper.js"
+  },
+  "dependencies": {
+    "puppeteer": "22.12.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

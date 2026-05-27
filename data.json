@@ -1,0 +1,210 @@
+{
+  "schema_version": "2.0",
+  "generated_at": "2024-01-01T00:00:00.000Z",
+  "total_companies": 18,
+  "global_stats": {
+    "total_posts_all": 645,
+    "avg_volume": 35.83,
+    "avg_satisfaction": 56.46
+  },
+  "companies": [
+    {
+      "name": "Opt!m!zely",
+      "total_posts": 44,
+      "positive_count": 14,
+      "negative_count": 15,
+      "mixed_count": 15,
+      "bayesian_score": 0.361433,
+      "rating_score": 1,
+      "percentage": 100,
+      "letter_grade": "A+"
+    },
+    {
+      "name": "Cef@lo",
+      "total_posts": 33,
+      "positive_count": 13,
+      "negative_count": 13,
+      "mixed_count": 7,
+      "bayesian_score": 0.346553,
+      "rating_score": 0.958831,
+      "percentage": 95.88,
+      "letter_grade": "A+"
+    },
+    {
+      "name": "Viv@soft",
+      "total_posts": 24,
+      "positive_count": 8,
+      "negative_count": 7,
+      "mixed_count": 9,
+      "bayesian_score": 0.331828,
+      "rating_score": 0.918091,
+      "percentage": 91.81,
+      "letter_grade": "A+"
+    },
+    {
+      "name": "Mogoj Station 23",
+      "total_posts": 35,
+      "positive_count": 6,
+      "negative_count": 20,
+      "mixed_count": 9,
+      "bayesian_score": 0.252062,
+      "rating_score": 0.697396,
+      "percentage": 69.74,
+      "letter_grade": "B+"
+    },
+    {
+      "name": "We11Dev",
+      "total_posts": 42,
+      "positive_count": 4,
+      "negative_count": 23,
+      "mixed_count": 15,
+      "bayesian_score": 0.24224,
+      "rating_score": 0.670223,
+      "percentage": 67.02,
+      "letter_grade": "B+"
+    },
+    {
+      "name": "Inter@ctive Cares",
+      "total_posts": 22,
+      "positive_count": 5,
+      "negative_count": 14,
+      "mixed_count": 3,
+      "bayesian_score": 0.239557,
+      "rating_score": 0.662798,
+      "percentage": 66.28,
+      "letter_grade": "B+"
+    },
+    {
+      "name": "WWW Engineers Ltd",
+      "total_posts": 31,
+      "positive_count": 7,
+      "negative_count": 24,
+      "mixed_count": 0,
+      "bayesian_score": 0.214779,
+      "rating_score": 0.594243,
+      "percentage": 59.42,
+      "letter_grade": "B"
+    },
+    {
+      "name": "BgIT",
+      "total_posts": 21,
+      "positive_count": 3,
+      "negative_count": 15,
+      "mixed_count": 3,
+      "bayesian_score": 0.208582,
+      "rating_score": 0.577096,
+      "percentage": 57.71,
+      "letter_grade": "B"
+    },
+    {
+      "name": "A11 Gen3ratIon Tech",
+      "total_posts": 32,
+      "positive_count": 3,
+      "negative_count": 23,
+      "mixed_count": 6,
+      "bayesian_score": 0.196871,
+      "rating_score": 0.544695,
+      "percentage": 54.47,
+      "letter_grade": "B"
+    },
+    {
+      "name": "Ech0lOgyx Ltd",
+      "total_posts": 25,
+      "positive_count": 1,
+      "negative_count": 20,
+      "mixed_count": 4,
+      "bayesian_score": 0.170209,
+      "rating_score": 0.470929,
+      "percentage": 47.09,
+      "letter_grade": "C"
+    },
+    {
+      "name": "Ther@p BD",
+      "total_posts": 41,
+      "positive_count": 2,
+      "negative_count": 32,
+      "mixed_count": 7,
+      "bayesian_score": 0.167302,
+      "rating_score": 0.462886,
+      "percentage": 46.29,
+      "letter_grade": "C"
+    },
+    {
+      "name": "8RAC IT",
+      "total_posts": 25,
+      "positive_count": 1,
+      "negative_count": 22,
+      "mixed_count": 2,
+      "bayesian_score": 0.153771,
+      "rating_score": 0.425448,
+      "percentage": 42.54,
+      "letter_grade": "C"
+    },
+    {
+      "name": "Betopi@ / BdCa11ing / $parktech / S0ftv3nce / $M Tech / B@ckventure",
+      "total_posts": 68,
+      "positive_count": 5,
+      "negative_count": 58,
+      "mixed_count": 5,
+      "bayesian_score": 0.14306,
+      "rating_score": 0.395813,
+      "percentage": 39.58,
+      "letter_grade": "D"
+    },
+    {
+      "name": "TechnoNe><t Ltd",
+      "total_posts": 75,
+      "positive_count": 6,
+      "negative_count": 64,
+      "mixed_count": 5,
+      "bayesian_score": 0.143047,
+      "rating_score": 0.395778,
+      "percentage": 39.58,
+      "letter_grade": "D"
+    },
+    {
+      "name": "N3xt Ventur3s",
+      "total_posts": 24,
+      "positive_count": 0,
+      "negative_count": 23,
+      "mixed_count": 1,
+      "bayesian_score": 0.131271,
+      "rating_score": 0.363196,
+      "percentage": 36.32,
+      "letter_grade": "D"
+    },
+    {
+      "name": "M!r InfO Systems Ltd",
+      "total_posts": 41,
+      "positive_count": 0,
+      "negative_count": 36,
+      "mixed_count": 5,
+      "bayesian_score": 0.128257,
+      "rating_score": 0.354856,
+      "percentage": 35.49,
+      "letter_grade": "D"
+    },
+    {
+      "name": "2SL Wireless",
+      "total_posts": 31,
+      "positive_count": 0,
+      "negative_count": 29,
+      "mixed_count": 2,
+      "bayesian_score": 0.125003,
+      "rating_score": 0.345855,
+      "percentage": 34.59,
+      "letter_grade": "D"
+    },
+    {
+      "name": "AkIj iB0s",
+      "total_posts": 31,
+      "positive_count": 0,
+      "negative_count": 30,
+      "mixed_count": 1,
+      "bayesian_score": 0.117522,
+      "rating_score": 0.325156,
+      "percentage": 32.52,
+      "letter_grade": "D"
+    }
+  ]
+}

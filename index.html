@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leaderboard — Company Sentiment Rankings</title>
+  <meta name="description" content="Live-updated company sentiment leaderboard powered by Bayesian scoring." />
+
+  <!-- Fonts: Syne (display) + DM Mono (data/mono) + DM Sans (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ═══════════════════════════════════════════════════════════
+       CSS CUSTOM PROPERTIES — Design tokens
+    ═══════════════════════════════════════════════════════════ */
+    :root {
+      --bg:          #0b0c0e;
+      --bg-2:        #111318;
+      --bg-3:        #181b22;
+      --border:      #1f2330;
+      --border-hi:   #2e3347;
+      --text-1:      #eef0f6;
+      --text-2:      #8b90a8;
+      --text-3:      #555b76;
+      --accent:      #5b7fff;
+      --accent-dim:  #2d3f80;
+      --green:       #3ecf8e;
+      --green-dim:   #1a4035;
+      --amber:       #f5a623;
+      --amber-dim:   #3d2c0a;
+      --red:         #e05252;
+      --red-dim:     #3d1515;
+      --radius:      10px;
+      --radius-lg:   16px;
+      --font-display: 'Syne', sans-serif;
+      --font-mono:    'DM Mono', monospace;
+      --font-body:    'DM Sans', sans-serif;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text-1);
+      font-family: var(--font-body);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Noise texture overlay ──── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       LAYOUT WRAPPER
+    ═══════════════════════════════════════════════════════════ */
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px 80px;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       HEADER
+    ═══════════════════════════════════════════════════════════ */
+    header {
+      padding: 52px 0 36px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 36px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .site-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .site-tag::before {
+      content: '';
+      display: block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 5vw, 48px);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      color: var(--text-1);
+    }
+
+    h1 span {
+      color: var(--accent);
+    }
+
+    .header-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      text-align: right;
+    }
+
+    .last-updated {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-3);
+    }
+
+    .stat-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .stat-chip {
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-2);
+    }
+
+    .stat-chip strong {
+      color: var(--text-1);
+      font-weight: 500;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       CONTROLS BAR
+    ═══════════════════════════════════════════════════════════ */
+    .controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .search-wrap {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-3);
+      pointer-events: none;
+      width: 14px;
+      height: 14px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 9px 12px 9px 36px;
+      color: var(--text-1);
+      font-family: var(--font-body);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-input::placeholder { color: var(--text-3); }
+
+    .search-input:focus {
+      border-color: var(--accent-dim);
+      box-shadow: 0 0 0 3px rgba(91, 127, 255, 0.12);
+    }
+
+    .sort-select {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 9px 36px 9px 12px;
+      color: var(--text-1);
+      font-family: var(--font-body);
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23555b76' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      transition: border-color 0.2s;
+    }
+
+    .sort-select:focus { border-color: var(--accent-dim); }
+
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .toggle-wrap input[type="checkbox"] { display: none; }
+
+    .toggle-track {
+      width: 34px;
+      height: 19px;
+      background: var(--bg-3);
+      border: 1px solid var(--border-hi);
+      border-radius: 100px;
+      position: relative;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .toggle-track::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--text-3);
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .toggle-wrap input:checked + .toggle-track {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+    }
+
+    .toggle-wrap input:checked + .toggle-track::after {
+      transform: translateX(15px);
+      background: var(--accent);
+    }
+
+    .toggle-label {
+      font-size: 13px;
+      color: var(--text-2);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       RESULTS INFO LINE
+    ═══════════════════════════════════════════════════════════ */
+    .results-info {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-3);
+      margin-bottom: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       LEADERBOARD TABLE
+    ═══════════════════════════════════════════════════════════ */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 620px;
+    }
+
+    thead {
+      background: var(--bg-3);
+    }
+
+    thead th {
+      padding: 12px 16px;
+      text-align: left;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-3);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    thead th.align-right { text-align: right; }
+    thead th.align-center { text-align: center; }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+
+    tbody tr:hover { background: var(--bg-2); }
+
+    td {
+      padding: 14px 16px;
+      vertical-align: middle;
+    }
+
+    /* ── Rank cell ──── */
+    .td-rank {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-3);
+      width: 44px;
+    }
+
+    .rank-1 { color: var(--amber); font-weight: 500; }
+    .rank-2 { color: var(--text-2); }
+    .rank-3 { color: #a07c50; }
+
+    /* ── Company name cell ──── */
+    .td-name {
+      font-weight: 500;
+      font-size: 14px;
+      color: var(--text-1);
+    }
+
+    .td-name small {
+      display: block;
+      font-size: 11px;
+      color: var(--text-3);
+      font-family: var(--font-mono);
+      margin-top: 2px;
+    }
+
+    /* ── Total reviews cell ──── */
+    .td-reviews {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-2);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    /* ── Sentiment bar cell ──── */
+    .td-bar { width: 160px; }
+
+    .sentiment-bar {
+      display: flex;
+      height: 8px;
+      border-radius: 4px;
+      overflow: hidden;
+      gap: 1px;
+    }
+
+    .bar-positive {
+      background: var(--green);
+      border-radius: 4px 0 0 4px;
+      transition: width 0.5s ease;
+    }
+
+    .bar-mixed {
+      background: var(--amber);
+    }
+
+    .bar-negative {
+      background: var(--red);
+      border-radius: 0 4px 4px 0;
+      transition: width 0.5s ease;
+    }
+
+    .bar-legend {
+      display: flex;
+      gap: 8px;
+      margin-top: 5px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-3);
+    }
+
+    .bar-legend-item { display: flex; align-items: center; gap: 3px; }
+
+    .bar-legend-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+    }
+
+    /* ── Score cell ──── */
+    .td-score {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .score-pct {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-1);
+    }
+
+    /* ── Grade badge cell ──── */
+    .td-grade { text-align: center; }
+
+    .grade-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .grade-Aplus  { background: #1a3d2b; color: var(--green);  border: 1px solid #2a5c3f; }
+    .grade-A      { background: #1a3528; color: #5dd9a0;       border: 1px solid #265040; }
+    .grade-Aminus { background: #1b3525; color: #7acf8e;       border: 1px solid #2c4d30; }
+    .grade-Bplus  { background: #1a2e3d; color: #5aa8f0;       border: 1px solid #25486a; }
+    .grade-B      { background: #1a2a3d; color: #7db8f5;       border: 1px solid #244070; }
+    .grade-C      { background: #2e2a12; color: var(--amber);  border: 1px solid #5a4d1a; }
+    .grade-D      { background: #2d1a0e; color: #e07a30;       border: 1px solid #5a3010; }
+    .grade-F      { background: var(--red-dim); color: var(--red); border: 1px solid #5c2020; }
+
+    /* ═══════════════════════════════════════════════════════════
+       EMPTY / LOADING / ERROR STATES
+    ═══════════════════════════════════════════════════════════ */
+    .state-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 64px 20px;
+      text-align: center;
+      gap: 12px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: var(--bg-2);
+    }
+
+    .state-icon {
+      font-size: 32px;
+      opacity: 0.6;
+    }
+
+    .state-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      color: var(--text-1);
+    }
+
+    .state-sub {
+      font-size: 13px;
+      color: var(--text-3);
+      max-width: 360px;
+    }
+
+    /* ── Skeleton loading rows ──── */
+    .skeleton-row td { padding: 14px 16px; }
+
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-3) 25%, var(--bg-2) 50%, var(--bg-3) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 4px;
+      height: 14px;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       FOOTER
+    ═══════════════════════════════════════════════════════════ */
+    footer {
+      margin-top: 52px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .footer-left {
+      font-size: 12px;
+      color: var(--text-3);
+    }
+
+    .footer-left a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer-right {
+      display: flex;
+      gap: 12px;
+    }
+
+    .footer-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-3);
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px 8px;
+      letter-spacing: 0.06em;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       ENTRY ANIMATIONS
+    ═══════════════════════════════════════════════════════════ */
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate-in {
+      animation: fadeSlideUp 0.35s ease both;
+    }
+
+    tbody tr { animation: fadeSlideUp 0.3s ease both; }
+
+    /* ═══════════════════════════════════════════════════════════
+       MOBILE RESPONSIVE
+    ═══════════════════════════════════════════════════════════ */
+    @media (max-width: 640px) {
+      .header-top   { flex-direction: column; }
+      .header-meta  { align-items: flex-start; text-align: left; }
+      .stat-chips   { justify-content: flex-start; }
+      .controls     { flex-direction: column; align-items: stretch; }
+      .toggle-wrap  { justify-content: space-between; }
+      .td-bar       { display: none; }
+      footer        { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- ════════════════════════════════════════════
+       HEADER
+  ════════════════════════════════════════════ -->
+  <header>
+    <div class="header-top">
+      <div>
+        <div class="site-tag">Live Leaderboard</div>
+        <h1>Company <span>Sentiment</span><br>Rankings</h1>
+      </div>
+      <div class="header-meta">
+        <div class="last-updated" id="last-updated">Fetching data…</div>
+        <div class="stat-chips" id="stat-chips">
+          <div class="stat-chip">— companies</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ════════════════════════════════════════════
+       CONTROLS
+  ════════════════════════════════════════════ -->
+  <div class="controls animate-in">
+    <div class="search-wrap">
+      <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        type="text"
+        id="search-input"
+        class="search-input"
+        placeholder="Search companies…"
+        aria-label="Search companies"
+        autocomplete="off"
+      />
+    </div>
+
+    <select id="sort-select" class="sort-select" aria-label="Sort order">
+      <option value="score">Highest Score</option>
+      <option value="volume">Most Reviews</option>
+      <option value="alpha">Alphabetical (A–Z)</option>
+    </select>
+
+    <label class="toggle-wrap" for="low-vol-toggle" title="Hide companies with fewer than 3 reviews">
+      <input type="checkbox" id="low-vol-toggle" checked />
+      <span class="toggle-track"></span>
+      <span class="toggle-label">Hide low-volume</span>
+    </label>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       RESULTS INFO
+  ════════════════════════════════════════════ -->
+  <div class="results-info" id="results-info">Loading…</div>
+
+  <!-- ════════════════════════════════════════════
+       MAIN TABLE
+  ════════════════════════════════════════════ -->
+  <div class="table-container animate-in" id="table-container">
+    <table id="leaderboard-table" aria-label="Company Sentiment Leaderboard">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Company</th>
+          <th class="align-right">Reviews</th>
+          <th>Sentiment Split</th>
+          <th class="align-right">Score</th>
+          <th class="align-center">Grade</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <!-- Skeleton loading rows -->
+        <tr class="skeleton-row">
+          <td><div class="skeleton" style="width:20px"></div></td>
+          <td><div class="skeleton" style="width:120px"></div></td>
+          <td><div class="skeleton" style="width:40px;margin-left:auto"></div></td>
+          <td><div class="skeleton" style="width:140px;height:8px"></div></td>
+          <td><div class="skeleton" style="width:52px;margin-left:auto"></div></td>
+          <td><div class="skeleton" style="width:36px;height:36px;border-radius:8px;margin:auto"></div></td>
+        </tr>
+        <tr class="skeleton-row">
+          <td><div class="skeleton" style="width:20px"></div></td>
+          <td><div class="skeleton" style="width:90px"></div></td>
+          <td><div class="skeleton" style="width:40px;margin-left:auto"></div></td>
+          <td><div class="skeleton" style="width:120px;height:8px"></div></td>
+          <td><div class="skeleton" style="width:52px;margin-left:auto"></div></td>
+          <td><div class="skeleton" style="width:36px;height:36px;border-radius:8px;margin:auto"></div></td>
+        </tr>
+        <tr class="skeleton-row">
+          <td><div class="skeleton" style="width:20px"></div></td>
+          <td><div class="skeleton" style="width:150px"></div></td>
+          <td><div class="skeleton" style="width:40px;margin-left:auto"></div></td>
+          <td><div class="skeleton" style="width:100px;height:8px"></div></td>
+          <td><div class="skeleton" style="width:52px;margin-left:auto"></div></td>
+          <td><div class="skeleton" style="width:36px;height:36px;border-radius:8px;margin:auto"></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       FOOTER
+  ════════════════════════════════════════════ -->
+  <footer>
+    <div class="footer-left">
+      Powered by <strong>Bayesian Average</strong> scoring.
+      Data sourced from <a href="https://deshimula.com/company-summary" target="_blank" rel="noopener">deshimula.com</a>
+      &mdash; auto-updated every 6 hours.
+    </div>
+    <div class="footer-right">
+      <span class="footer-badge">FREE FOREVER</span>
+      <span class="footer-badge">GITHUB PAGES</span>
+    </div>
+  </footer>
+
+</div><!-- /wrapper -->
+
+
+<!-- ══════════════════════════════════════════════════════════
+     JAVASCRIPT ENGINE
+══════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+
+  // ── State ──────────────────────────────────────────────────
+  let allCompanies   = [];
+  let filteredData   = [];
+  let currentSort    = 'score';
+  let hideLowVolume  = true;
+  let searchQuery    = '';
+  let fetchError     = false;
+
+  // ── DOM refs ───────────────────────────────────────────────
+  const tableBody      = document.getElementById('table-body');
+  const searchInput    = document.getElementById('search-input');
+  const sortSelect     = document.getElementById('sort-select');
+  const lowVolToggle   = document.getElementById('low-vol-toggle');
+  const resultsInfo    = document.getElementById('results-info');
+  const lastUpdatedEl  = document.getElementById('last-updated');
+  const statChipsEl    = document.getElementById('stat-chips');
+
+  // ── Grade → CSS class map ─────────────────────────────────
+  const GRADE_CLASS = {
+    'A+': 'grade-Aplus',
+    'A':  'grade-A',
+    'A-': 'grade-Aminus',
+    'B+': 'grade-Bplus',
+    'B':  'grade-B',
+    'C':  'grade-C',
+    'D':  'grade-D',
+    'F':  'grade-F',
+  };
+
+  // ── Fetch data.json ────────────────────────────────────────
+  async function loadData() {
+    try {
+      const res = await fetch('data.json?v=' + Date.now(), { cache: 'no-store' });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const json = await res.json();
+
+      allCompanies = json.companies || [];
+      fetchError   = false;
+
+      // Header meta
+      const ts = json.generated_at
+        ? new Date(json.generated_at).toLocaleString('en-US', {
+            month: 'short', day: 'numeric',
+            hour: '2-digit', minute: '2-digit', hour12: true,
+          })
+        : 'Unknown';
+
+      lastUpdatedEl.textContent = `Updated: ${ts}`;
+
+      statChipsEl.innerHTML = `
+        <div class="stat-chip"><strong>${json.total_companies}</strong> companies</div>
+        <div class="stat-chip">Avg <strong>${json.global_stats?.avg_satisfaction ?? '—'}%</strong> satisfaction</div>
+      `;
+
+    } catch (err) {
+      console.error('[FETCH]', err);
+      fetchError   = true;
+      allCompanies = [];
+      lastUpdatedEl.textContent = 'Data unavailable';
+    }
+
+    render();
+  }
+
+  // ── Apply filters & sort → filteredData ───────────────────
+  function applyFiltersAndSort() {
+    let data = [...allCompanies];
+
+    // Filter: low volume
+    if (hideLowVolume) {
+      data = data.filter(c => c.total_posts >= 3);
+    }
+
+    // Filter: search
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      data = data.filter(c => c.name.toLowerCase().includes(q));
+    }
+
+    // Sort
+    if (currentSort === 'score') {
+      data.sort((a, b) => b.rating_score - a.rating_score);
+    } else if (currentSort === 'volume') {
+      data.sort((a, b) => b.total_posts - a.total_posts);
+    } else if (currentSort === 'alpha') {
+      data.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    filteredData = data;
+  }
+
+  // ── Render the table ───────────────────────────────────────
+  function render() {
+    applyFiltersAndSort();
+
+    // Error state
+    if (fetchError) {
+      tableBody.innerHTML = '';
+      document.getElementById('table-container').innerHTML = `
+        <div class="state-box">
+          <div class="state-icon">⚠️</div>
+          <div class="state-title">Could not load data</div>
+          <div class="state-sub">The leaderboard data could not be fetched.
+            This usually means the first scraper run hasn't completed yet.
+            Check back in a few minutes or trigger the workflow manually on GitHub.</div>
+        </div>
+      `;
+      resultsInfo.textContent = 'Error loading data.';
+      return;
+    }
+
+    // Empty search state
+    if (filteredData.length === 0 && allCompanies.length > 0) {
+      tableBody.innerHTML = `
+        <tr><td colspan="6">
+          <div class="state-box" style="border:none;background:transparent;padding:40px 20px">
+            <div class="state-icon">🔍</div>
+            <div class="state-title">No results found</div>
+            <div class="state-sub">No companies match "${escapeHtml(searchQuery)}"${hideLowVolume ? ' with the low-volume filter on' : ''}.</div>
+          </div>
+        </td></tr>
+      `;
+      resultsInfo.textContent = `0 companies shown`;
+      return;
+    }
+
+    // Normal render
+    const rows = filteredData.map((company, idx) => {
+      const rank         = idx + 1;
+      const rankClass    = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
+      const total        = company.total_posts || 1;
+      const posWidth     = ((company.positive_count / total) * 100).toFixed(1);
+      const mixedWidth   = ((company.mixed_count  / total) * 100).toFixed(1);
+      const negWidth     = ((company.negative_count / total) * 100).toFixed(1);
+      const gradeClass   = GRADE_CLASS[company.letter_grade] || 'grade-F';
+      const pct          = company.percentage?.toFixed(2) ?? '—';
+      const animDelay    = `animation-delay:${idx * 35}ms`;
+
+      return `
+        <tr style="${animDelay}">
+          <td class="td-rank ${rankClass}">${rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank}</td>
+          <td class="td-name">
+            ${escapeHtml(company.name)}
+          </td>
+          <td class="td-reviews">
+            ${company.total_posts.toLocaleString()}
+          </td>
+          <td class="td-bar">
+            <div class="sentiment-bar" title="${company.positive_count} positive / ${company.mixed_count} mixed / ${company.negative_count} negative">
+              <div class="bar-positive" style="width:${posWidth}%"></div>
+              <div class="bar-mixed"    style="width:${mixedWidth}%"></div>
+              <div class="bar-negative" style="width:${negWidth}%"></div>
+            </div>
+            <div class="bar-legend">
+              <span class="bar-legend-item">
+                <span class="bar-legend-dot" style="background:var(--green)"></span>${company.positive_count}+
+              </span>
+              <span class="bar-legend-item">
+                <span class="bar-legend-dot" style="background:var(--amber)"></span>${company.mixed_count}~
+              </span>
+              <span class="bar-legend-item">
+                <span class="bar-legend-dot" style="background:var(--red)"></span>${company.negative_count}−
+              </span>
+            </div>
+          </td>
+          <td class="td-score">
+            <span class="score-pct">${pct}%</span>
+          </td>
+          <td class="td-grade">
+            <span class="grade-badge ${gradeClass}">${escapeHtml(company.letter_grade)}</span>
+          </td>
+        </tr>
+      `;
+    });
+
+    tableBody.innerHTML = rows.join('');
+
+    const hiddenCount = hideLowVolume
+      ? allCompanies.filter(c => c.total_posts < 3).length
+      : 0;
+
+    resultsInfo.textContent =
+      `Showing ${filteredData.length} of ${allCompanies.length} companies` +
+      (hiddenCount > 0 ? ` · ${hiddenCount} low-volume hidden` : '') +
+      (searchQuery ? ` · filtered by "${searchQuery}"` : '');
+  }
+
+  // ── HTML escape utility ────────────────────────────────────
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ── Event listeners ────────────────────────────────────────
+  searchInput.addEventListener('input', () => {
+    searchQuery = searchInput.value.trim();
+    render();
+  });
+
+  sortSelect.addEventListener('change', () => {
+    currentSort = sortSelect.value;
+    render();
+  });
+
+  lowVolToggle.addEventListener('change', () => {
+    hideLowVolume = lowVolToggle.checked;
+    render();
+  });
+
+  // ── Boot ───────────────────────────────────────────────────
+  loadData();
+
+})();
+</script>
+
+</body>
+</html>
